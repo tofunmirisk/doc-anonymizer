@@ -1,6 +1,9 @@
 from docx import Document
 from dotenv import load_dotenv
-load_dotenv()
+load_dotenv(override=True)
+import csv
+import os
+from config import SPOOL_DIR, OPENAI_API_KEY
 
 # todo: extract lines from text box (shapes) and footnotes if present
 def extract_lines(doc):
@@ -71,13 +74,8 @@ def prepare_prompt(text):
 
 def llm_filter(prompt, system_role=None, model="gpt-4o" ):
     import openai, os
-    # openai_api_key = "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"  # Your OpenAI API key
 
-    openai_api_key = os.getenv("OPENAI_API_KEY")
-    if not openai_api_key:
-        raise ValueError("OPENAI_API_KEY environment variable is not set.")
-
-    client = openai.OpenAI(api_key=openai_api_key)
+    client = openai.OpenAI(api_key=OPENAI_API_KEY)
     response = client.chat.completions.create(
         model=model,
         messages=[
@@ -100,3 +98,35 @@ def create_docx(paragraphs, filename):
     for p in paragraphs:
         doc.add_paragraph(p)
     doc.save(filename)
+
+def write_sensitive_data_to_csv(sensitive_data: dict, csv_path: str, mode: str = 'w'):
+    """
+    Write the extracted sensitive data to a CSV file.
+    """
+    write_header = not (os.path.exists(csv_path) and mode == 'a')
+    with open(csv_path, mode, newline='', encoding='utf-8') as csvfile:
+        writer = csv.writer(csvfile)
+        if write_header:
+            writer.writerow(['EntityType', 'Values'])
+        for entity_type, values in sensitive_data.items():
+            if values:
+                writer.writerow([entity_type.capitalize(), "\n".join(values)])
+            else:
+                writer.writerow([entity_type.capitalize(), ""])
+
+def write_failed_to_csv(failed: dict, failed_csv_path: str, mode: str = 'w'):
+    """ Write the failed extractions to a CSV file.
+    Args:
+        failed (dict): A dictionary where keys are document names and values are lists of failed entities.
+        failed_csv_path (str): The path to the CSV file where failed extractions will be written.
+        mode (str): The mode in which to open the file ('w' for write, 'a' for append).
+    """
+    write_header = not (os.path.exists(failed_csv_path) and mode == 'a')
+
+    with open(failed_csv_path, mode, newline='', encoding='utf-8') as csvfile:
+        writer = csv.writer(csvfile)
+        if write_header:
+            writer.writerow(['Document', 'FailedEntity'])
+        for doc, entities in failed.items():
+            for entity in entities:
+                writer.writerow([doc, entity])

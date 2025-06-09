@@ -69,9 +69,9 @@ def replace_words_in_docx(doc, replacements):
     patterns = {}
     for word in replacements:
         if is_simple_word(word):
-            patterns[word] = re.compile(rf'\b{re.escape(word)}\b')
+            patterns[word] = re.compile(rf'\b{re.escape(word)}\b', re.IGNORECASE)
         else:
-            patterns[word] = re.compile(re.escape(word))
+            patterns[word] = re.compile(re.escape(word), re.IGNORECASE)
 
     def replace_in_runs(paragraph, patterns):
         # If there are no runs, nothing to do

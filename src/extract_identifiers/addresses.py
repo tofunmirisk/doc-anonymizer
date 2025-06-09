@@ -1,21 +1,17 @@
-def extract_addresses(texts):
+import re
+
+
+def extract_addresses(lines):
     """
     Extract addresses from a list of text strings.
     :param texts: List of strings (paragraphs, table cells, etc.)
     :return: Set of addresses found
     """
-    # TODO: Implement extraction logic
-    return set()
 
-# address_extractor.py
+    ADDRESS_ANCHORS = ['address', 'registered office', 'head office', 'location', 'principal place']
+    UK_POSTCODE_PATTERN = r"\b[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}\b"
+    ADDRESS_LINE_PATTERN = r"(.{5,}),\s+([A-Za-z\s]+)(,\s+[A-ZaLetters\s]+)*"  # e.g., Street, City, Country
 
-import re
-
-ADDRESS_ANCHORS = ['address', 'registered office', 'head office', 'location', 'principal place']
-UK_POSTCODE_PATTERN = r"\b[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}\b"
-ADDRESS_LINE_PATTERN = r"(.{5,}),\s+([A-Za-z\s]+)(,\s+[A-ZaLettters\s]+)*"  # e.g., Street, City, Country
-
-def extract_addresses(lines):
     full_text = "\n".join(lines)
     addresses = set()
 
