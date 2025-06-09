@@ -105,62 +105,62 @@ def replace_words_in_docx(doc, replacements):
     return doc
 
 # def replace_words_in_docx_with_headers(doc, replacements):
-    # Replace in headers (all sections)
-    for section in doc.sections:
-        # Always process all header types
-        for header in [section.header, getattr(section, 'first_page_header', None), getattr(section, 'even_page_header', None)]:
-            if header is None:
-                continue
-            for para in header.paragraphs:
-                print(f"[DEBUG] Header paragraph before: '{''.join(run.text for run in para.runs)}'")
-                replace_in_runs(para, patterns)
-                print(f"[DEBUG] Header paragraph after: '{''.join(run.text for run in para.runs)}'")
-            for table in header.tables:
-                for row in table.rows:
-                    for cell in row.cells:
-                        for para in cell.paragraphs:
-                            print(f"[DEBUG] Header table cell before: '{''.join(run.text for run in para.runs)}'")
-                            replace_in_runs(para, patterns)
-                            print(f"[DEBUG] Header table cell after: '{''.join(run.text for run in para.runs)}'")
+#     # Replace in headers (all sections)
+#     for section in doc.sections:
+#         # Always process all header types
+#         for header in [section.header, getattr(section, 'first_page_header', None), getattr(section, 'even_page_header', None)]:
+#             if header is None:
+#                 continue
+#             for para in header.paragraphs:
+#                 print(f"[DEBUG] Header paragraph before: '{''.join(run.text for run in para.runs)}'")
+#                 replace_in_runs(para, patterns)
+#                 print(f"[DEBUG] Header paragraph after: '{''.join(run.text for run in para.runs)}'")
+#             for table in header.tables:
+#                 for row in table.rows:
+#                     for cell in row.cells:
+#                         for para in cell.paragraphs:
+#                             print(f"[DEBUG] Header table cell before: '{''.join(run.text for run in para.runs)}'")
+#                             replace_in_runs(para, patterns)
+#                             print(f"[DEBUG] Header table cell after: '{''.join(run.text for run in para.runs)}'")
 
-        # Edge case: process textboxes in headers (w:txbxContent) using lxml
-        # This is NOT the normal case, but handles text in header shapes/textboxes
-        try:
-            from lxml import etree
-            W_NS = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
-            for header in [section.header, getattr(section, 'first_page_header', None), getattr(section, 'even_page_header', None)]:
-                if header is None:
-                    continue
-                xml = header._element
-                # Find all w:txbxContent elements (textboxes) using explicit namespace
-                for txbx in xml.findall('.//' + W_NS + 'txbxContent'):
-                    for t in txbx.findall('.//' + W_NS + 't'):
-                        print(f"[DEBUG][EDGE CASE] Textbox tag: {t.tag}")
-                        print(f"[DEBUG][EDGE CASE] Textbox text: {t.text}")
-                        print(f"[DEBUG][EDGE CASE] Textbox XML: {etree.tostring(t, pretty_print=True, encoding='unicode')}")
+#         # Edge case: process textboxes in headers (w:txbxContent) using lxml
+#         # This is NOT the normal case, but handles text in header shapes/textboxes
+#         try:
+#             from lxml import etree
+#             W_NS = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
+#             for header in [section.header, getattr(section, 'first_page_header', None), getattr(section, 'even_page_header', None)]:
+#                 if header is None:
+#                     continue
+#                 xml = header._element
+#                 # Find all w:txbxContent elements (textboxes) using explicit namespace
+#                 for txbx in xml.findall('.//' + W_NS + 'txbxContent'):
+#                     for t in txbx.findall('.//' + W_NS + 't'):
+#                         print(f"[DEBUG][EDGE CASE] Textbox tag: {t.tag}")
+#                         print(f"[DEBUG][EDGE CASE] Textbox text: {t.text}")
+#                         print(f"[DEBUG][EDGE CASE] Textbox XML: {etree.tostring(t, pretty_print=True, encoding='unicode')}")
 
-                        # Remove <w:t> tag if its text matches a word/phrase to be filtered out (replacement is empty string)
-                        remove_tag = False
-                        orig_text = t.text
-                        replaced_text = orig_text
-                        for word, pattern in patterns.items():
-                            if replacements[word] == '':
-                                # If the whole tag matches the word/phrase, mark for removal
-                                if orig_text == word:
-                                    remove_tag = True
-                                # If the word/phrase is a substring, remove it from the text
-                                replaced_text = pattern.sub('', replaced_text)
-                            else:
-                                replaced_text = pattern.sub(replacements[word], replaced_text)
-                        if remove_tag:
-                            print(f"[DEBUG][EDGE CASE] Removing <w:t> tag with text: '{orig_text}'")
-                            parent = t.getparent()
-                            parent.remove(t)
-                            continue
-                        if orig_text != replaced_text:
-                            print(f"[DEBUG][EDGE CASE] Textbox text before: '{orig_text}' | after: '{replaced_text}'")
-                        t.text = replaced_text
-        except ImportError:
-            print("[WARNING] lxml not installed, skipping edge case textbox replacement in headers.")
-        except Exception as e:
-            print(f"[WARNING] Error processing header textboxes: {e}")
+#                         # Remove <w:t> tag if its text matches a word/phrase to be filtered out (replacement is empty string)
+#                         remove_tag = False
+#                         orig_text = t.text
+#                         replaced_text = orig_text
+#                         for word, pattern in patterns.items():
+#                             if replacements[word] == '':
+#                                 # If the whole tag matches the word/phrase, mark for removal
+#                                 if orig_text == word:
+#                                     remove_tag = True
+#                                 # If the word/phrase is a substring, remove it from the text
+#                                 replaced_text = pattern.sub('', replaced_text)
+#                             else:
+#                                 replaced_text = pattern.sub(replacements[word], replaced_text)
+#                         if remove_tag:
+#                             print(f"[DEBUG][EDGE CASE] Removing <w:t> tag with text: '{orig_text}'")
+#                             parent = t.getparent()
+#                             parent.remove(t)
+#                             continue
+#                         if orig_text != replaced_text:
+#                             print(f"[DEBUG][EDGE CASE] Textbox text before: '{orig_text}' | after: '{replaced_text}'")
+#                         t.text = replaced_text
+#         except ImportError:
+#             print("[WARNING] lxml not installed, skipping edge case textbox replacement in headers.")
+#         except Exception as e:
+#             print(f"[WARNING] Error processing header textboxes: {e}")
